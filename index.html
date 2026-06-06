@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECNOVA - Control Estudiantil</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* === ESTILOS BASE === */
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #e9ecef; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .contenedor-app { width: 380px; height: 650px; background: #3A86FF; color: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 20px; box-sizing: border-box; position: relative; overflow-y: auto; overflow-x: hidden; }
+        
+        .pantalla { display: none; width: 100%; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
+        .pantalla-activa { display: flex; }
+        
+        h1 { margin: 10px 0 5px 0; font-size: 24px; letter-spacing: 2px;}
+        h2 { color: #FF1744; margin-top: 5px; margin-bottom: 5px; font-size: 18px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        h3 { font-size: 12px; color: white; margin-bottom: 15px;}
+        
+        .cuadro-alerta { background: #FF1744; color: white; padding: 10px; border-radius: 6px; font-size: 12px; margin: 10px 0; width: 100%; display: none; box-sizing: border-box; }
+        
+        input, button, select { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        
+        .grupo-cedula { display: flex; width: 100%; gap: 5px; }
+        .grupo-cedula select { width: 25%; font-weight: bold; background: #f0f0f0; }
+        .grupo-cedula input { width: 75%; }
+        
+        button.btn-principal { background-color: #FF1744; color: white; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 6px rgba(255, 23, 68, 0.3); transition: 0.2s; }
+        button.btn-principal:hover { background-color: #D50000; }
+        button.btn-secundario { background-color: white; color: #FF1744; border: 1px solid #FF1744; font-weight: bold; cursor: pointer; }
+        
+        .materia-card { background: #224466; padding: 10px; margin: 6px 0; border-radius: 6px; width: 100%; text-align: left; display: flex; align-items: center; border-left: 4px solid #17b978; box-sizing: border-box; font-size: 13px;}
+        .chk-materia { margin-right: 10px; width: auto; transform: scale(1.2); cursor: pointer; }
+        #lista-materias-dinamica { width: 100%; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+        
+        /* HORARIO TRANSFORMADO EN TABLA PARA COMPATIBILIDAD CON PDF */
+        #cuadro-horario { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
+        .celda { padding: 8px 2px; text-align: center; border: 1px solid #1e3d59; width: 20%; }
+        .celda-header { background: #17b978; color: white; font-weight: bold; }
+        .celda-libre { background: #f0f0f0; color: #aaa; }
+        .celda-ocupada { background: #17b978; color: white; font-weight: bold; }
+        .celda-choque { background: #FF1744; color: white; font-weight: bold; animation: vibrar 0.3s ease; }
+        
+        @keyframes vibrar { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
+
+        #comprobante-pdf { background: white; color: #333; padding: 15px; border-radius: 8px; margin: 15px 0; width: 100%; box-sizing: border-box; text-align: left; border: 2px dashed #FF1744; }
+        #comprobante-pdf p { margin: 5px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="contenedor-app">
+        
+        <div id="vista-login" class="pantalla pantalla-activa">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 100px; height: auto; margin: 10px auto 5px auto; display: block;">
+            <h1>TECNOVA</h1>
+            <h2>INICIO DE SESIÓN</h2>
+            
+            <div id="alerta-login" class="cuadro-alerta"></div>
+            
+            <div class="grupo-cedula">
+                <select id="log-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
+                <input type="number" id="log-cedula" placeholder="Cédula">
+            </div>
+            
+            <div style="position: relative; width: 100%;">
+                <input type="password" id="log-clave" placeholder="Contraseña">
+                <button type="button" id="btn-ojo-login" style="position: absolute; right: 5px; top: 8px; width: auto; background: none; border: none; cursor: pointer; padding: 5px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+            
+            <button class="btn-principal" id="btn-login-trigger">INICIAR SESIÓN</button>
+            
+            <div style="margin-top: 15px; font-size: 13px; color: white;">
+                <span>¿No tienes cuenta?</span><br>
+                <a id="lnk-ir-registro" style="color: white; font-weight: bold; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 5px;">Regístrate aquí</a>
+            </div>
+        </div>
+
+        <div id="vista-registro" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 80px; height: auto; margin: 5px auto; display: block;">
+            <h2>REGISTRO</h2>
+            <h3>NUEVO PERFIL ACADÉMICO</h3>
+            
+            <div id="alerta-registro" class="cuadro-alerta"></div>
+            
+            <input type="text" id="reg-nombre" placeholder="Nombre completo">
+            
+            <div class="grupo-cedula">
+                <select id="reg-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
+                <input type="number" id="reg-cedula" placeholder="Cédula">
+            </div>
+            
+            <select id="reg-carrera">
+                <option value="">Seleccione Carrera...</option>
+                <option value="ing_sistemas">Ingeniería de Sistemas</option>
+                <option value="enfermeria">Enfermería</option>
+                <option value="administracion">Administración de Desastres</option>
+            </select>
+            
+            <div style="position: relative; width: 100%;">
+                <input type="password" id="reg-clave" placeholder="Crear Contraseña">
+                <button type="button" id="btn-ojo-registro" style="position: absolute; right: 5px; top: 8px; width: auto; background: none; border: none; cursor: pointer; padding: 5px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+            
+            <button class="btn-principal" id="btn-registro-trigger">REGISTRARME</button>
+            <button class="btn-secundario" id="btn-volver-login">VOLVER AL LOGIN</button>
+        </div>
+
+        <div id="vista-materias" class="pantalla">
+            <h2>OFERTA ACADÉMICA</h2>
+            <h3 id="lbl-carrera-actual">Carrera</h3>
+            
+            <div style="background: #17b978; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px;">
+                UC Seleccionadas: <span id="contador-uc">0</span> / 20
+            </div>
+            
+            <div id="alerta-materias" class="cuadro-alerta"></div>
+            <div id="lista-materias-dinamica"></div>
+            
+            <div style="width: 100%; text-align: left; font-size: 11px; margin-top: 5px; border-bottom: 1px solid #17b978;">Horario:</div>
+            
+            <table id="cuadro-horario">
+                <tr>
+                    <th class="celda celda-header">Lun</th><th class="celda celda-header">Mar</th><th class="celda celda-header">Mié</th><th class="celda celda-header">Jue</th><th class="celda celda-header">Vie</th>
+                </tr>
+                <tr>
+                    <td class="celda celda-libre" id="celda-lunes-1">-</td><td class="celda celda-libre" id="celda-martes-1">-</td><td class="celda celda-libre" id="celda-miercoles-1">-</td><td class="celda celda-libre" id="celda-jueves-1">-</td><td class="celda celda-libre" id="celda-viernes-1">-</td>
+                </tr>
+                <tr>
+                    <td class="celda celda-libre" id="celda-lunes-2">-</td><td class="celda celda-libre" id="celda-martes-2">-</td><td class="celda celda-libre" id="celda-miercoles-2">-</td><td class="celda celda-libre" id="celda-jueves-2">-</td><td class="celda celda-libre" id="celda-viernes-2">-</td>
+                </tr>
+                <tr>
+                    <td class="celda celda-libre" id="celda-lunes-3">-</td><td class="celda celda-libre" id="celda-martes-3">-</td><td class="celda celda-libre" id="celda-miercoles-3">-</td><td class="celda celda-libre" id="celda-jueves-3">-</td><td class="celda celda-libre" id="celda-viernes-3">-</td>
+                </tr>
+            </table>
+            
+            <button class="btn-principal" id="btn-confirmar-inscripcion">CONFIRMAR INSCRIPCIÓN</button>
+            <a id="btn-finalizar-sesion" style="color: white; cursor: pointer; margin-top: 15px; text-decoration: underline; font-size: 13px;">Cerrar Sesión</a>
+        </div>
+
+        <div id="vista-exito" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 80px; height: auto; margin: 5px auto; display: block;">
+            <h2>¡INSCRIPCIÓN EXITOSA!</h2>
+            
+            <div id="comprobante-pdf">
+                <center><strong style="color:#3A86FF; font-size: 16px;">I.U.T. TECNOVA</strong></center>
+                <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
+                <p><strong style="color:#FF1744;">ESTUDIANTE:</strong> <span id="doc-nombre"></span></p>
+                <p><strong style="color:#FF1744;">CÉDULA:</strong> <span id="doc-cedula"></span></p>
+                <p><strong style="color:#FF1744;">CARRERA:</strong> <span id="doc-carrera"></span></p>
+                <p><strong style="color:#FF1744;">UC INSCRITAS:</strong> <span id="doc-uc"></span></p>
+                
+                <h4 style="color:#FF1744; text-align:center; font-size: 12px; margin: 15px 0 5px 0;">HORARIO DE CLASES</h4>
+                
+                <div id="horario-pdf-container"></div>
+                
+                <hr style="border: 0.5px solid #ccc; margin: 10px 0 8px 0;">
+                <p style="font-size: 11px; text-align: center; font-weight: bold;">SISTEMA LOCAL (OFFLINE)</p>
+            </div>
+            
+            <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
+            <button class="btn-secundario" id="btn-cancelar-salir" style="margin-top: 10px;">FINALIZAR</button>
+        </div>
+    </div>
+
+    <script>
+        const bd_carreras = {
+            "ing_sistemas": {
+                nombre: "Ingeniería de Sistemas",
+                materias: [
+                    { id: "s1", nombre: "Algoritmos y Estructuras", uc: 5, dia: "lunes", hora: "1" },
+                    { id: "s2", nombre: "Métodos Numéricos", uc: 4, dia: "martes", hora: "2" },
+                    { id: "s3", nombre: "Programación Orientada a Objetos", uc: 5, dia: "lunes", hora: "3" },
+                    { id: "s4", nombre: "Defensa Integral IV", uc: 2, dia: "miercoles", hora: "1" },
+                    { id: "s5", nombre: "Procesamiento de Datos", uc: 4, dia: "jueves", hora: "2" }
+                ]
+            },
+            "enfermeria": {
+                nombre: "Enfermería",
+                materias: [
+                    { id: "e1", nombre: "Anatomía Humana II", uc: 5, dia: "lunes", hora: "1" },
+                    { id: "e2", nombre: "Farmacología", uc: 4, dia: "martes", hora: "1" }
+                ]
+            },
+            "administracion": {
+                nombre: "Administración de Desastres",
+                materias: [
+                    { id: "a1", nombre: "Gestión de Riesgos", uc: 4, dia: "lunes", hora: "2" },
+                    { id: "a2", nombre: "Logística de Emergencias", uc: 4, dia: "miercoles", hora: "1" }
+                ]
+            }
+        };
+
+        let usuarioActivo = null;
+        const LIMITE_UC = 20;
+        let choqueGlobal = false;
+
+        const iconoOjoAbierto = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        const iconoOjoCerrado = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+        function navegarA(idOcultar, idMostrar) {
+            document.getElementById(idOcultar).classList.remove('pantalla-activa');
+            document.getElementById(idMostrar).classList.add('pantalla-activa');
+            document.querySelectorAll('.cuadro-alerta').forEach(alerta => alerta.style.display = 'none');
+        }
+
+        function mostrarAlerta(elementoId, mensaje) {
+            let alerta = document.getElementById(elementoId);
+            alerta.innerText = mensaje;
+            alerta.style.display = "block";
+        }
+
+        function controladorOjito(inputId, btn) {
+            let input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                btn.innerHTML = iconoOjoCerrado;
+            } else {
+                input.type = "password";
+                btn.innerHTML = iconoOjoAbierto;
+            }
+        }
+
+        function ejecutarRegistro() {
+            let nombre = document.getElementById('reg-nombre').value.trim();
+            let nac = document.getElementById('reg-nac').value;
+            let cedula = document.getElementById('reg-cedula').value.trim();
+            let carrera = document.getElementById('reg-carrera').value;
+            let clave = document.getElementById('reg-clave').value.trim();
+
+            if (!nombre || !cedula || !carrera || !clave) {
+                mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios.");
+                return;
+            }
+            if (cedula.length < 7) {
+                mostrarAlerta('alerta-registro', "Error: La cédula debe tener al menos 7 números.");
+                return;
+            }
+            if (clave.length < 6) {
+                mostrarAlerta('alerta-registro', "Error: La contraseña debe tener al menos 6 caracteres.");
+                return;
+            }
+
+            let cedulaCompleta = nac + cedula;
+            let usuarios = JSON.parse(localStorage.getItem('usuarios_sice')) || [];
+            
+            let existe = usuarios.find(u => u.cedula === cedulaCompleta);
+            if (existe) {
+                mostrarAlerta('alerta-registro', "Error: Esta cédula ya está registrada en el sistema.");
+                return;
+            }
+
+            usuarios.push({ cedula: cedulaCompleta, nombre: nombre, clave: clave, carrera_id: carrera });
+            localStorage.setItem('usuarios_sice', JSON.stringify(usuarios));
+            
+            alert("¡Registro Exitoso! Ya puedes iniciar sesión.");
+            navegarA('vista-registro', 'vista-login');
+        }
+
+        function ejecutarLogin() {
+            let nac = document.getElementById('log-nac').value;
+            let ced = document.getElementById('log-cedula').value.trim();
+            let clave = document.getElementById('log-clave').value.trim();
+
+            if (!ced || !clave) {
+                mostrarAlerta('alerta-login', "Por favor, ingresa tus credenciales.");
+                return;
+            }
+
+            let cedulaCompleta = nac + ced;
+            let usuarios = JSON.parse(localStorage.getItem('usuarios_sice')) || [];
+            let usuario = usuarios.find(u => u.cedula === cedulaCompleta);
+
+            if (!usuario) {
+                mostrarAlerta('alerta-login', "Error: El usuario no se encuentra registrado.");
+                return;
+            }
+            if (usuario.clave !== clave) {
+                mostrarAlerta('alerta-login', "Error: La contraseña es incorrecta.");
+                return;
+            }
+
+            usuarioActivo = usuario;
+            cargarOfertaAcademica();
+            navegarA('vista-login', 'vista-materias');
+        }
+
+        function cargarOfertaAcademica() {
+            let datosCarrera = bd_carreras[usuarioActivo.carrera_id];
+            document.getElementById('lbl-carrera-actual').innerText = datosCarrera.nombre.toUpperCase();
+            document.getElementById('contador-uc').innerText = "0";
+
+            let contenedorLista = document.getElementById('lista-materias-dinamica');
+            contenedorLista.innerHTML = "";
+
+            datosCarrera.materias.forEach(materia => {
+                let divCard = document.createElement('div');
+                divCard.className = 'materia-card';
+
+                let chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.className = 'chk-materia';
+                chk.value = materia.uc;
+                chk.id = 'mat-' + materia.id;
+                chk.dataset.dia = materia.dia;
+                chk.dataset.hora = materia.hora;
+                chk.dataset.nombre = materia.nombre;
+                chk.addEventListener('change', calcularCreditosYHorario);
+
+                let lbl = document.createElement('label');
+                lbl.htmlFor = chk.id;
+                lbl.innerText = materia.nombre + " (" + materia.uc + " UC)";
+
+                divCard.appendChild(chk);
+                divCard.appendChild(lbl);
+                contenedorLista.appendChild(divCard);
+            });
+        }
+
+        function calcularCreditosYHorario() {
+            let checkboxes = document.querySelectorAll('.chk-materia:checked');
+            let totalUc = 0;
+            checkboxes.forEach(chk => { totalUc += parseInt(chk.value); });
+            document.getElementById('contador-uc').innerText = totalUc;
+
+            if (totalUc > LIMITE_UC) {
+                mostrarAlerta('alerta-materias', "⚠️ Límite de 20 UC excedido. Desmarca alguna materia.");
+            } else {
+                document.getElementById('alerta-materias').style.display = "none";
+            }
+            actualizarCuadroHorario();
+        }
+
+        function actualizarCuadroHorario() {
+            choqueGlobal = false;
+            document.querySelectorAll('[id^="celda-"]').forEach(celda => {
+                if(!celda.classList.contains('celda-header')) {
+                    celda.classList.remove('celda-ocupada', 'celda-choque');
+                    celda.classList.add('celda-libre');
+                    celda.innerText = '-';
+                }
+            });
+
+            let seleccionadas = document.querySelectorAll('.chk-materia:checked');
+            seleccionadas.forEach(chk => {
+                let dia = chk.dataset.dia;
+                let hora = chk.dataset.hora;
+                let nombreCorto = chk.dataset.nombre.substring(0, 5) + ".";
+                let celda = document.getElementById(`celda-${dia}-${hora}`);
+                
+                if (celda) {
+                    if (celda.innerText !== '-') {
+                        celda.classList.remove('celda-ocupada', 'celda-libre');
+                        celda.classList.add('celda-choque');
+                        celda.innerText = 'CHQ';
+                        choqueGlobal = true;
+                    } else {
+                        celda.classList.remove('celda-libre');
+                        celda.classList.add('celda-ocupada');
+                        celda.innerText = nombreCorto;
+                    }
+                }
+            });
+
+            if (choqueGlobal) {
+                mostrarAlerta('alerta-materias', "⚠️ Error: Tienes materias chocando en el mismo horario.");
+            }
+        }
+
+        function procesarInscripcionFinal() {
+            let uc = parseInt(document.getElementById('contador-uc').innerText);
+            if (uc === 0) { mostrarAlerta('alerta-materias', "Debes seleccionar al menos una asignatura."); return; }
+            if (uc > LIMITE_UC) { mostrarAlerta('alerta-materias', "Exceso de UC. Corrige antes de confirmar."); return; }
+            if (choqueGlobal) { mostrarAlerta('alerta-materias', "Resuelve los choques de horario."); return; }
+
+            document.getElementById('doc-nombre').innerText = usuarioActivo.nombre.toUpperCase();
+            document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
+            document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
+            document.getElementById('doc-uc').innerText = uc;
+            
+            // LA MAGIA DEL PDF: Clona el horario y lo mete en el ticket antes de saltar de pantalla
+            let cuadroHorario = document.getElementById('cuadro-horario').outerHTML;
+            document.getElementById('horario-pdf-container').innerHTML = cuadroHorario;
+
+            navegarA('vista-materias', 'vista-exito');
+        }
+
+        function descargarPDF() {
+            let elemento = document.getElementById('comprobante-pdf');
+            let opciones = {
+                margin: 0.5,
+                filename: 'Comprobante_TECNOVA_' + usuarioActivo.cedula + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opciones).from(elemento).save();
+        }
+
+        function cerrarSesion() {
+            usuarioActivo = null;
+            document.getElementById('log-cedula').value = "";
+            document.getElementById('log-clave').value = "";
+            navegarA('vista-materias', 'vista-login');
+            navegarA('vista-exito', 'vista-login');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('btn-ojo-login').addEventListener('click', function() { controladorOjito('log-clave', this); });
+            document.getElementById('btn-ojo-registro').addEventListener('click', function() { controladorOjito('reg-clave', this); });
+            document.getElementById('btn-login-trigger').addEventListener('click', ejecutarLogin);
+            document.getElementById('btn-registro-trigger').addEventListener('click', ejecutarRegistro);
+            document.getElementById('btn-confirmar-inscripcion').addEventListener('click', procesarInscripcionFinal);
+            document.getElementById('btn-descargar-pdf').addEventListener('click', descargarPDF);
+            document.getElementById('btn-finalizar-sesion').addEventListener('click', cerrarSesion);
+            document.getElementById('btn-cancelar-salir').addEventListener('click', cerrarSesion);
+            document.getElementById('lnk-ir-registro').addEventListener('click', function() { navegarA('vista-login', 'vista-registro'); });
+            document.getElementById('btn-volver-login').addEventListener('click', function() { navegarA('vista-registro', 'vista-login'); });
+        });
+    </script>
+</body>
+</html>
