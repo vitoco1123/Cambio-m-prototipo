@@ -169,7 +169,7 @@
     </div>
 
     <script>
-        const bd_carreras = {
+      const bd_carreras = {
             "ing_sistemas": {
                 nombre: "Ingeniería de Sistemas",
                 materias: [
@@ -177,24 +177,31 @@
                     { id: "s2", nombre: "Métodos Numéricos", uc: 4, dia: "martes", hora: "2" },
                     { id: "s3", nombre: "Programación Orientada a Objetos", uc: 5, dia: "lunes", hora: "3" },
                     { id: "s4", nombre: "Defensa Integral IV", uc: 2, dia: "miercoles", hora: "1" },
-                    { id: "s5", nombre: "Procesamiento de Datos", uc: 4, dia: "jueves", hora: "2" }
+                    { id: "s5", nombre: "Procesamiento de Datos", uc: 4, dia: "jueves", hora: "2" },
+                    { id: "s6", nombre: "Ingeniería de Software", uc: 4, dia: "viernes", hora: "1" },
+                    { id: "s7", nombre: "Bases de Datos", uc: 5, dia: "viernes", hora: "3" }
                 ]
             },
             "enfermeria": {
                 nombre: "Enfermería",
                 materias: [
                     { id: "e1", nombre: "Anatomía Humana II", uc: 5, dia: "lunes", hora: "1" },
-                    { id: "e2", nombre: "Farmacología", uc: 4, dia: "martes", hora: "1" }
+                    { id: "e2", nombre: "Farmacología", uc: 4, dia: "martes", hora: "1" },
+                    { id: "e3", nombre: "Microbiología", uc: 4, dia: "miercoles", hora: "2" },
+                    { id: "e4", nombre: "Salud Pública", uc: 3, dia: "jueves", hora: "1" }
                 ]
             },
             "administracion": {
                 nombre: "Administración de Desastres",
                 materias: [
                     { id: "a1", nombre: "Gestión de Riesgos", uc: 4, dia: "lunes", hora: "2" },
-                    { id: "a2", nombre: "Logística de Emergencias", uc: 4, dia: "miercoles", hora: "1" }
+                    { id: "a2", nombre: "Logística de Emergencias", uc: 4, dia: "miercoles", hora: "1" },
+                    { id: "a3", nombre: "Primeros Auxilios", uc: 3, dia: "martes", hora: "3" },
+                    { id: "a4", nombre: "Legislación en Desastres", uc: 3, dia: "jueves", hora: "2" }
                 ]
             }
         };
+
 
         let usuarioActivo = null;
         const LIMITE_UC = 20;
@@ -383,7 +390,7 @@
             document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
             document.getElementById('doc-uc').innerText = uc;
             
-            // LA MAGIA DEL PDF: Clona el horario y lo mete en el ticket antes de saltar de pantalla
+            // PDF
             let cuadroHorario = document.getElementById('cuadro-horario').outerHTML;
             document.getElementById('horario-pdf-container').innerHTML = cuadroHorario;
 
