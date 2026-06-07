@@ -86,7 +86,8 @@
             
             <div id="alerta-registro" class="cuadro-alerta"></div>
             
-            <input type="text" id="reg-nombre" placeholder="Nombre completo">
+            <input type="text" id="reg-nombre" placeholder="Nombres">
+            <input type="text" id="reg-apellido" placeholder="Apellidos">
             
             <div class="grupo-cedula">
                 <select id="reg-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
@@ -160,7 +161,7 @@
                 <div id="horario-pdf-container"></div>
                 
                 <hr style="border: 0.5px solid #ccc; margin: 10px 0 8px 0;">
-                <p style="font-size: 11px; text-align: center; font-weight: bold;">SISTEMA LOCAL (OFFLINE)</p>
+                <p style="font-size: 11px; text-align: center; font-weight: bold;">SISTEMA LOCAL Y CLOUD</p>
             </div>
             
             <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
@@ -169,6 +170,9 @@
     </div>
 
     <script>
+      // ENLACE A GOOGLE SHEETS
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbzN0kWG1T89YEH01tm28xqZs047yuvMC-KjM3MbwAPNT3fLONT9_yPogr5fi2H75SFH/exec';
+
       const bd_carreras = {
             "ing_sistemas": {
                 nombre: "Ingeniería de Sistemas",
@@ -202,7 +206,6 @@
             }
         };
 
-
         let usuarioActivo = null;
         const LIMITE_UC = 20;
         let choqueGlobal = false;
@@ -235,12 +238,13 @@
 
         function ejecutarRegistro() {
             let nombre = document.getElementById('reg-nombre').value.trim();
+            let apellido = document.getElementById('reg-apellido').value.trim(); // Se captura el apellido
             let nac = document.getElementById('reg-nac').value;
             let cedula = document.getElementById('reg-cedula').value.trim();
             let carrera = document.getElementById('reg-carrera').value;
             let clave = document.getElementById('reg-clave').value.trim();
 
-            if (!nombre || !cedula || !carrera || !clave) {
+            if (!nombre || !apellido || !cedula || !carrera || !clave) {
                 mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios.");
                 return;
             }
@@ -262,11 +266,38 @@
                 return;
             }
 
-            usuarios.push({ cedula: cedulaCompleta, nombre: nombre, clave: clave, carrera_id: carrera });
+            // Cambiamos el texto del botón temporalmente
+            let btnReg = document.getElementById('btn-registro-trigger');
+            btnReg.innerText = "GUARDANDO...";
+            btnReg.disabled = true;
+
+            // 1. Guardar en localStorage (Offline)
+            usuarios.push({ cedula: cedulaCompleta, nombre: nombre, apellido: apellido, clave: clave, carrera_id: carrera });
             localStorage.setItem('usuarios_sice', JSON.stringify(usuarios));
             
-            alert("¡Registro Exitoso! Ya puedes iniciar sesión.");
-            navegarA('vista-registro', 'vista-login');
+            // 2. Guardar en Google Sheets (Cloud)
+            let datos = new FormData();
+            datos.append('cedula', cedulaCompleta);
+            datos.append('nombre', nombre);
+            datos.append('apellido', apellido);
+            datos.append('clave', clave);
+            let nombreCarrera = bd_carreras[carrera].nombre;
+            datos.append('carrera', nombreCarrera);
+
+            fetch(scriptURL, { method: 'POST', body: datos })
+            .then(response => {
+                alert("¡Registro Exitoso! Tus datos han sido guardados en la nube.");
+                btnReg.innerText = "REGISTRARME";
+                btnReg.disabled = false;
+                navegarA('vista-registro', 'vista-login');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Guardado localmente. Hubo un problema al conectar con la nube.");
+                btnReg.innerText = "REGISTRARME";
+                btnReg.disabled = false;
+                navegarA('vista-registro', 'vista-login');
+            });
         }
 
         function ejecutarLogin() {
@@ -385,7 +416,12 @@
             if (uc > LIMITE_UC) { mostrarAlerta('alerta-materias', "Exceso de UC. Corrige antes de confirmar."); return; }
             if (choqueGlobal) { mostrarAlerta('alerta-materias', "Resuelve los choques de horario."); return; }
 
-            document.getElementById('doc-nombre').innerText = usuarioActivo.nombre.toUpperCase();
+            // Usar nombre y apellido guardados
+            let nombreCompleto = usuarioActivo.nombre;
+            if(usuarioActivo.apellido) {
+                nombreCompleto += " " + usuarioActivo.apellido;
+            }
+            document.getElementById('doc-nombre').innerText = nombreCompleto.toUpperCase();
             document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
             document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
             document.getElementById('doc-uc').innerText = uc;
