@@ -35,9 +35,8 @@
         .chk-materia { margin-right: 10px; width: auto; transform: scale(1.2); cursor: pointer; }
         #lista-materias-dinamica { width: 100%; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
         
-        /* HORARIO TRANSFORMADO EN TABLA PARA COMPATIBILIDAD CON PDF */
         #cuadro-horario { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
-        .celda { padding: 8px 2px; text-align: center; border: 1px solid #1e3d59; width: 20%; }
+        .celda { padding: 8px 2px; text-align: center; border: 1px solid #1e3d59; width: 16%; }
         .celda-header { background: #17b978; color: white; font-weight: bold; }
         .celda-libre { background: #f0f0f0; color: #aaa; }
         .celda-ocupada { background: #17b978; color: white; font-weight: bold; }
@@ -112,6 +111,20 @@
             <button class="btn-secundario" id="btn-volver-login">VOLVER AL LOGIN</button>
         </div>
 
+        <div id="vista-dashboard" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 60px; height: auto; margin: 5px auto; display: block;">
+            <h2>PANEL ACADÉMICO</h2>
+            <h3 style="margin-bottom: 5px;">¡BIENVENIDO, <span id="dash-nombre"></span>!</h3>
+            <p style="font-size: 11px; margin: 0 0 10px 0;">Tu proceso de inscripción está completado.</p>
+            
+            <div style="width: 100%; text-align: left; font-size: 11px; margin-top: 5px;">Tu Horario Registrado:</div>
+            <div id="horario-dashboard-container" style="width: 100%;"></div>
+            
+            <button class="btn-principal" id="btn-ir-modificar-materias" style="margin-top: 10px;">CAMBIAR MATERIAS</button>
+            <button class="btn-secundario" id="btn-cambiar-clave-dash">CAMBIAR CONTRASEÑA</button>
+            <button class="btn-secundario" id="btn-cerrar-sesion-dash" style="margin-top: 5px; background: none; color: white; border: 1px solid white;">CERRAR SESIÓN</button>
+        </div>
+
         <div id="vista-materias" class="pantalla">
             <h2>OFERTA ACADÉMICA</h2>
             <h3 id="lbl-carrera-actual">Carrera</h3>
@@ -153,23 +166,23 @@
                 <tr>
                     <td class="celda-header" style="font-size: 8px; border: 1px solid #1e3d59;">12:00pm<br>2:00pm</td>
                     <td class="celda celda-libre" id="celda-lunes-3">-</td>
-                    <td class="celda celda-libre" id="celda-martes-3">-</td>  
+                    <td class="celda celda-libre" id="celda-martes-3">-</td>
                     <td class="celda celda-libre" id="celda-miercoles-3">-</td>
-                    <td class="celda celda-libre" id="celda-jueves-3">-</td>    
+                    <td class="celda celda-libre" id="celda-jueves-3">-</td>
                     <td class="celda celda-libre" id="celda-viernes-3">-</td>
                 </tr>
             </table>
-
             
             <button class="btn-principal" id="btn-confirmar-inscripcion">CONFIRMAR INSCRIPCIÓN</button>
+            <button class="btn-secundario" id="btn-volver-dash-desde-materias" style="display: none; margin-top: 5px;">VOLVER AL PANEL</button>
             <a id="btn-finalizar-sesion" style="color: white; cursor: pointer; margin-top: 15px; text-decoration: underline; font-size: 13px;">Cerrar Sesión</a>
         </div>
 
         <div id="vista-exito" class="pantalla">
-            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 80px; height: auto; margin: 5px auto; display: block;">
             <h2>¡INSCRIPCIÓN EXITOSA!</h2>
             
             <div id="comprobante-pdf">
+                <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 60px; height: auto; margin: 0 auto 10px auto; display: block;">
                 <center><strong style="color:#3A86FF; font-size: 16px;">I.U.T. TECNOVA</strong></center>
                 <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
                 <p><strong style="color:#FF1744;">ESTUDIANTE:</strong> <span id="doc-nombre"></span></p>
@@ -182,17 +195,17 @@
                 <div id="horario-pdf-container"></div>
                 
                 <hr style="border: 0.5px solid #ccc; margin: 10px 0 8px 0;">
-                <p style="font-size: 11px; text-align: center; font-weight: bold;">SISTEMA LOCAL Y CLOUD</p>
+                <p style="font-size: 11px; text-align: center; font-weight: bold;">SISTEMA CLOUD - BASE DE DATOS REAL</p>
             </div>
             
             <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
-            <button class="btn-secundario" id="btn-cancelar-salir" style="margin-top: 10px;">FINALIZAR</button>
+            <button class="btn-secundario" id="btn-finalizar-flujo" style="margin-top: 10px;">IR AL PANEL DE CONTROL</button>
         </div>
     </div>
 
     <script>
-      // ENLACE A GOOGLE SHEETS
-      const scriptURL = 'https://script.google.com/macros/s/AKfycbzN0kWG1T89YEH01tm28xqZs047yuvMC-KjM3MbwAPNT3fLONT9_yPogr5fi2H75SFH/exec';
+      // TU URL EN LA NUBE YA INTEGRADA PERFECTAMENTE
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbz5ldaZn5NZtedDM44EjjFnhJEUMxEmdtlTM5HYsOkfw7aZEJQrykrFnh-sjs7mMqXuGA/exec';
 
       const bd_carreras = {
             "ing_sistemas": {
@@ -230,9 +243,7 @@
         let usuarioActivo = null;
         const LIMITE_UC = 20;
         let choqueGlobal = false;
-
-        const iconoOjoAbierto = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-        const iconoOjoCerrado = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+        let esModificacion = false;
 
         function navegarA(idOcultar, idMostrar) {
             document.getElementById(idOcultar).classList.remove('pantalla-activa');
@@ -248,18 +259,20 @@
 
         function controladorOjito(inputId, btn) {
             let input = document.getElementById(inputId);
+            const ojoAbierto = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            const ojoCerrado = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
             if (input.type === "password") {
                 input.type = "text";
-                btn.innerHTML = iconoOjoCerrado;
+                btn.innerHTML = ojoCerrado;
             } else {
                 input.type = "password";
-                btn.innerHTML = iconoOjoAbierto;
+                btn.innerHTML = ojoAbierto;
             }
         }
 
         function ejecutarRegistro() {
             let nombre = document.getElementById('reg-nombre').value.trim();
-            let apellido = document.getElementById('reg-apellido').value.trim(); // Se captura el apellido
+            let apellido = document.getElementById('reg-apellido').value.trim(); 
             let nac = document.getElementById('reg-nac').value;
             let cedula = document.getElementById('reg-cedula').value.trim();
             let carrera = document.getElementById('reg-carrera').value;
@@ -269,55 +282,37 @@
                 mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios.");
                 return;
             }
-            if (cedula.length < 7) {
-                mostrarAlerta('alerta-registro', "Error: La cédula debe tener al menos 7 números.");
-                return;
-            }
-            if (clave.length < 6) {
-                mostrarAlerta('alerta-registro', "Error: La contraseña debe tener al menos 6 caracteres.");
-                return;
-            }
 
             let cedulaCompleta = nac + cedula;
-            let usuarios = JSON.parse(localStorage.getItem('usuarios_sice')) || [];
-            
-            let existe = usuarios.find(u => u.cedula === cedulaCompleta);
-            if (existe) {
-                mostrarAlerta('alerta-registro', "Error: Esta cédula ya está registrada en el sistema.");
-                return;
-            }
-
-            // Cambiamos el texto del botón temporalmente
             let btnReg = document.getElementById('btn-registro-trigger');
-            btnReg.innerText = "GUARDANDO...";
+            btnReg.innerText = "GUARDANDO EN NUBE...";
             btnReg.disabled = true;
-
-            // 1. Guardar en localStorage (Offline)
-            usuarios.push({ cedula: cedulaCompleta, nombre: nombre, apellido: apellido, clave: clave, carrera_id: carrera });
-            localStorage.setItem('usuarios_sice', JSON.stringify(usuarios));
             
-            // 2. Guardar en Google Sheets (Cloud)
             let datos = new FormData();
+            datos.append('action', 'register');
             datos.append('cedula', cedulaCompleta);
             datos.append('nombre', nombre);
             datos.append('apellido', apellido);
             datos.append('clave', clave);
-            let nombreCarrera = bd_carreras[carrera].nombre;
-            datos.append('carrera', nombreCarrera);
+            datos.append('carrera_id', carrera);
 
             fetch(scriptURL, { method: 'POST', body: datos })
-            .then(response => {
-                alert("¡Registro Exitoso! Tus datos han sido guardados en la nube.");
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    navegarA('vista-registro', 'vista-login');
+                } else {
+                    mostrarAlerta('alerta-registro', data.message);
+                }
                 btnReg.innerText = "REGISTRARME";
                 btnReg.disabled = false;
-                navegarA('vista-registro', 'vista-login');
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Guardado localmente. Hubo un problema al conectar con la nube.");
+            .catch(err => {
+                console.error(err);
+                alert("Error crítico de conexión.");
                 btnReg.innerText = "REGISTRARME";
                 btnReg.disabled = false;
-                navegarA('vista-registro', 'vista-login');
             });
         }
 
@@ -332,21 +327,57 @@
             }
 
             let cedulaCompleta = nac + ced;
-            let usuarios = JSON.parse(localStorage.getItem('usuarios_sice')) || [];
-            let usuario = usuarios.find(u => u.cedula === cedulaCompleta);
+            let btnLog = document.getElementById('btn-login-trigger');
+            btnLog.innerText = "CONECTANDO CON SERVIDOR...";
+            btnLog.disabled = true;
 
-            if (!usuario) {
-                mostrarAlerta('alerta-login', "Error: El usuario no se encuentra registrado.");
-                return;
-            }
-            if (usuario.clave !== clave) {
-                mostrarAlerta('alerta-login', "Error: La contraseña es incorrecta.");
-                return;
-            }
+            let datos = new FormData();
+            datos.append('action', 'login');
+            datos.append('cedula', cedulaCompleta);
+            datos.append('clave', clave);
 
-            usuarioActivo = usuario;
-            cargarOfertaAcademica();
-            navegarA('vista-login', 'vista-materias');
+            fetch(scriptURL, { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => {
+                btnLog.innerText = "INICIAR SESIÓN";
+                btnLog.disabled = false;
+
+                if (data.status === 'success') {
+                    usuarioActivo = {
+                        cedula: cedulaCompleta,
+                        nombre: data.nombre,
+                        apellido: data.apellido,
+                        carrera_id: data.carrera_id
+                    };
+
+                    if (data.materias && data.materias.trim() !== "") {
+                        cargarOfertaAcademica();
+                        let idsGuardados = data.materias.split(',');
+                        idsGuardados.forEach(id => {
+                            let chk = document.getElementById('mat-' + id);
+                            if (chk) chk.checked = true;
+                        });
+                        calcularCreditosYHorario();
+                        
+                        document.getElementById('dash-nombre').innerText = (usuarioActivo.nombre + " " + usuarioActivo.apellido).toUpperCase();
+                        document.getElementById('horario-dashboard-container').innerHTML = document.getElementById('cuadro-horario').outerHTML;
+                        navegarA('vista-login', 'vista-dashboard');
+                    } else {
+                        esModificacion = false;
+                        document.getElementById('btn-volver-dash-desde-materias').style.display = "none";
+                        cargarOfertaAcademica();
+                        navegarA('vista-login', 'vista-materias');
+                    }
+                } else {
+                    mostrarAlerta('alerta-login', data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error de red. Asegúrate de tener conexión a internet activa.");
+                btnLog.innerText = "INICIAR SESIÓN";
+                btnLog.disabled = false;
+            });
         }
 
         function cargarOfertaAcademica() {
@@ -397,12 +428,9 @@
 
         function actualizarCuadroHorario() {
             choqueGlobal = false;
-            document.querySelectorAll('[id^="celda-"]').forEach(celda => {
-                if(!celda.classList.contains('celda-header')) {
-                    celda.classList.remove('celda-ocupada', 'celda-choque');
-                    celda.classList.add('celda-libre');
-                    celda.innerText = '-';
-                }
+            document.querySelectorAll('#cuadro-horario [id^="celda-"]').forEach(celda => {
+                celda.className = 'celda celda-libre';
+                celda.innerText = '-';
             });
 
             let seleccionadas = document.querySelectorAll('.chk-materia:checked');
@@ -414,13 +442,11 @@
                 
                 if (celda) {
                     if (celda.innerText !== '-') {
-                        celda.classList.remove('celda-ocupada', 'celda-libre');
-                        celda.classList.add('celda-choque');
+                        celda.className = 'celda celda-choque';
                         celda.innerText = 'CHQ';
                         choqueGlobal = true;
                     } else {
-                        celda.classList.remove('celda-libre');
-                        celda.classList.add('celda-ocupada');
+                        celda.className = 'celda celda-ocupada';
                         celda.innerText = nombreCorto;
                     }
                 }
@@ -437,21 +463,59 @@
             if (uc > LIMITE_UC) { mostrarAlerta('alerta-materias', "Exceso de UC. Corrige antes de confirmar."); return; }
             if (choqueGlobal) { mostrarAlerta('alerta-materias', "Resuelve los choques de horario."); return; }
 
-            // Usar nombre y apellido guardados
-            let nombreCompleto = usuarioActivo.nombre;
-            if(usuarioActivo.apellido) {
-                nombreCompleto += " " + usuarioActivo.apellido;
-            }
-            document.getElementById('doc-nombre').innerText = nombreCompleto.toUpperCase();
-            document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
-            document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
-            document.getElementById('doc-uc').innerText = uc;
-            
-            // PDF
-            let cuadroHorario = document.getElementById('cuadro-horario').outerHTML;
-            document.getElementById('horario-pdf-container').innerHTML = cuadroHorario;
+            let seleccionadas = document.querySelectorAll('.chk-materia:checked');
+            let idsMaterias = Array.from(seleccionadas).map(chk => chk.id.replace('mat-', '')).join(',');
 
-            navegarA('vista-materias', 'vista-exito');
+            let btnConf = document.getElementById('btn-confirmar-inscripcion');
+            btnConf.innerText = "SINCRONIZANDO CLOUD...";
+            btnConf.disabled = true;
+
+            let datos = new FormData();
+            datos.append('action', 'enroll');
+            datos.append('cedula', usuarioActivo.cedula);
+            datos.append('materias', idsMaterias);
+
+            fetch(scriptURL, { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => {
+                btnConf.innerText = "CONFIRMAR INSCRIPCIÓN";
+                btnConf.disabled = false;
+
+                if (data.status === 'success') {
+                    let nombreCompleto = usuarioActivo.nombre + " " + usuarioActivo.apellido;
+                    document.getElementById('doc-nombre').innerText = nombreCompleto.toUpperCase();
+                    document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
+                    document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
+                    document.getElementById('doc-uc').innerText = uc;
+                    
+                    document.getElementById('horario-pdf-container').innerHTML = document.getElementById('cuadro-horario').outerHTML;
+                    navegarA('vista-materias', 'vista-exito');
+                } else {
+                    alert("Error crítico al registrar materias.");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Fallo de red al procesar inscripción.");
+                btnConf.innerText = "CONFIRMAR INSCRIPCIÓN";
+                btnConf.disabled = false;
+            });
+        }
+
+        function ejecutarCambioClave() {
+            let nueva = prompt("Ingresa tu nueva contraseña (mínimo 6 caracteres):");
+            if (!nueva) return;
+            if (nueva.trim().length < 6) { alert("La contraseña es muy corta."); return; }
+
+            let datos = new FormData();
+            datos.append('action', 'change_password');
+            datos.append('cedula', usuarioActivo.cedula);
+            datos.append('nuevaClave', nueva.trim());
+
+            fetch(scriptURL, { method: 'POST', body: datos })
+            .then(res => res.json())
+            .then(data => { alert(data.message); })
+            .catch(err => { alert("Error de red al actualizar credenciales."); });
         }
 
         function descargarPDF() {
@@ -466,11 +530,12 @@
             html2pdf().set(opciones).from(elemento).save();
         }
 
-        function cerrarSesion() {
+        function desloguear() {
             usuarioActivo = null;
             document.getElementById('log-cedula').value = "";
             document.getElementById('log-clave').value = "";
             navegarA('vista-materias', 'vista-login');
+            navegarA('vista-dashboard', 'vista-login');
             navegarA('vista-exito', 'vista-login');
         }
 
@@ -481,8 +546,26 @@
             document.getElementById('btn-registro-trigger').addEventListener('click', ejecutarRegistro);
             document.getElementById('btn-confirmar-inscripcion').addEventListener('click', procesarInscripcionFinal);
             document.getElementById('btn-descargar-pdf').addEventListener('click', descargarPDF);
-            document.getElementById('btn-finalizar-sesion').addEventListener('click', cerrarSesion);
-            document.getElementById('btn-cancelar-salir').addEventListener('click', cerrarSesion);
+            
+            // ACCIONES DEL DASHBOARD
+            document.getElementById('btn-cerrar-sesion-dash').addEventListener('click', desloguear);
+            document.getElementById('btn-finalizar-sesion').addEventListener('click', desloguear);
+            document.getElementById('btn-cambiar-clave-dash').addEventListener('click', ejecutarCambioClave);
+            
+            document.getElementById('btn-ir-modificar-materias').addEventListener('click', function() {
+                esModificacion = true;
+                document.getElementById('btn-volver-dash-desde-materias').style.display = "block";
+                navegarA('vista-dashboard', 'vista-materias');
+            });
+            document.getElementById('btn-volver-dash-desde-materias').addEventListener('click', function() {
+                document.getElementById('horario-dashboard-container').innerHTML = document.getElementById('cuadro-horario').outerHTML;
+                navegarA('vista-materias', 'vista-dashboard');
+            });
+            document.getElementById('btn-finalizar-flujo').addEventListener('click', function() {
+                document.getElementById('horario-dashboard-container').innerHTML = document.getElementById('cuadro-horario').outerHTML;
+                navegarA('vista-exito', 'vista-dashboard');
+            });
+
             document.getElementById('lnk-ir-registro').addEventListener('click', function() { navegarA('vista-login', 'vista-registro'); });
             document.getElementById('btn-volver-login').addEventListener('click', function() { navegarA('vista-registro', 'vista-login'); });
         });
